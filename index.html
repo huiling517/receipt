@@ -466,7 +466,8 @@
                         <span class="receipt-content-label">事由：</span>
                         <span class="receipt-content-value ${isThreeLinesOrMore ? 'small-font' : ''}">${formattedContent}</span>
                     </div>
-                    <div class="receipt-row blank-line"></div> <!-- 新增空白行使金額下移 -->
+                    <div class="receipt-row blank-line"></div>
+                    <div class="receipt-row blank-line"></div> <!-- 共兩行空白行使金額下移，更顯美觀 -->
                     <div class="receipt-row">
                         <span class="receipt-content-label">金額：</span>
                         ${amountHtml}
