@@ -100,7 +100,7 @@
             grid-template-rows: repeat(2, minmax(13cm, auto));
             gap: 1.2cm 5mm;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            position: relative; /* Keep this for the internal dashed-line-separator */
+            position: relative;
         }
         
         .a4-page + .a4-page {
@@ -189,28 +189,26 @@
             font-size: 12px;
         }
 
-        /* Style for the explicitly added dashed line */
         .dashed-line-separator {
             position: absolute;
-            top: 50%; /* Center the dashed line between two receipts */
+            top: 50%;
             left: 0;
             right: 0;
             height: 1px;
-            border-top: 1px dashed #aaa; /* Dashed line style */
-            pointer-events: none; /* Prevent interaction */
-            z-index: 10; /* Ensure it is above content */
-            display: block; /* Ensure it is visible */
+            border-top: 1px dashed #aaa;
+            pointer-events: none;
+            z-index: 10;
+            display: block;
         }
 
-        /* 新增的樣式，讓 checkbox 和 label 在同一行 */
         .form-group.checkbox-group {
-            flex-direction: row; /* 讓內容水平排列 */
-            align-items: center; /* 垂直置中 */
+            flex-direction: row;
+            align-items: center;
         }
 
         .form-group.checkbox-group label {
-            margin-bottom: 0; /* 移除底部間距 */
-            margin-left: 8px; /* 在 checkbox 和 label 之間添加間距 */
+            margin-bottom: 0;
+            margin-left: 8px;
         }
 
 
@@ -228,7 +226,7 @@
                 box-shadow: none; 
                 margin: 0; 
                 height: 297mm;
-                padding: 1cm; /* Adjusted padding to 1cm for consistency */
+                padding: 1cm;
                 grid-template-columns: 1fr 1fr;
                 grid-template-rows: repeat(2, 13cm); 
                 gap: 1.5cm 1cm; 
@@ -241,11 +239,11 @@
                 position: absolute;
                 top: 0;
                 bottom: 0;
-                left: 50%; /* 中間分隔線 */
+                left: 50%;
                 width: 0;
-                border-left: 1px dashed #aaa; /* 虛線樣式 */
-                z-index: 1; /* 確保在內容之上 */
-                pointer-events: none; /* 防止干擾點擊或選擇 */
+                border-left: 1px dashed #aaa;
+                z-index: 1;
+                pointer-events: none;
             }
 
             .a4-page:last-of-type {
@@ -257,7 +255,6 @@
                 height: 13cm;
             }
 
-            /* Ensure dashed line is visible in print mode */
             .dashed-line-separator {
                 display: block; 
             }
@@ -278,7 +275,7 @@
             <div class="form-group">
                 <label for="date">日期:</label>
                 <input type="date" id="date" required>
-                <div class="checkbox-group"> <!-- 使用新的 class 讓 checkbox 和 label 在同一行 -->
+                <div class="checkbox-group">
                     <input type="checkbox" id="disableDate" />
                     <label for="disableDate">是否禁用日期</label>
                 </div>
@@ -293,8 +290,10 @@
 □飲料提袋100元/個       ˍˍˍˍˍˍˍˍˍˍ個</textarea>
             </div>
             <div class="form-group">
-                <label for="payerNames">交款人姓名列表 (每行一個姓名，可由Excel複製貼上):</label>
-                <textarea id="payerNames" rows="3" placeholder="若輸入姓名，將依姓名數量產生收據；留空則依下方「產生組數」產生空白姓名收據" style="resize:vertical;"></textarea>
+                <label for="payerNames">交款人資料 (支援 Excel 直接貼上姓名及編號):</label>
+                <textarea id="payerNames" rows="5" placeholder="可從 Excel 複製多個欄位貼上，例如：
+林美美 (編號: 69251 )
+張美美 (編號: 69252 )" style="resize:vertical;"></textarea>
             </div>
             <div class="form-group">
                 <label for="amount">金額：</label>
@@ -305,12 +304,12 @@
                 <input type="text" id="startSerial" value="屏基2025A299-001" required>
             </div>
             <div class="form-group">
-                <label for="quantity">產生組數 (每組含存根聯/收執聯):</label>
+                <label for="quantity">產生組數 (若上方已輸入姓名，則以此姓名數為主):</label>
                 <input type="number" id="quantity" value="2" min="1" max="100" required>
             </div>
-            <div class="form-group checkbox-group"> <!-- 使用新的 class 讓 checkbox 和 label 在同一行 -->
+            <div class="form-group checkbox-group">
                 <input type="checkbox" id="includeDirector" />
-                <label for="includeDirector">包含院長簽名欄位 (若不勾選則只顯示經手人)</label>
+                <label for="includeDirector">包含院長簽名欄位</label>
             </div>
             <div class="form-buttons">
                 <button type="submit" class="btn btn-generate">產生證明</button>
@@ -340,6 +339,24 @@
             });
         });
 
+        // 格式化從 Excel 貼上的姓名與資料
+        function formatPayerInfo(rawLine) {
+            if (!rawLine) return '';
+            
+            // 如果包含 Tab (從 Excel 複製貼上)，進行欄位分割處理
+            if (rawLine.includes('\t')) {
+                const parts = rawLine.split('\t').map(p => p.trim()).filter(p => p !== '');
+                if (parts.length > 1) {
+                    const namePart = parts[0];
+                    const otherPart = parts.slice(1).join(' ');
+                    // 將第一欄 (姓名) 放大，後續欄位 (編號等) 使用較小字體模擬 Excel 層次
+                    return `<span style="font-size: 1.15em; font-weight: bold;">${namePart}</span> <span style="font-size: 0.9em; font-weight: normal;">${otherPart}</span>`;
+                }
+            }
+            // 一般單行文字直接返回，但加粗以利識別
+            return `<span style="font-weight: bold;">${rawLine}</span>`;
+        }
+
         form.addEventListener('submit', function(event) {
             event.preventDefault();
             container.innerHTML = '';
@@ -352,15 +369,13 @@
             const includeDirector = includeDirectorCheckbox.checked;
 
             const startSerial = document.getElementById('startSerial').value;
-            
-            // 處理姓名列表
             const payerNamesInput = document.getElementById('payerNames').value;
-            const payerNames = payerNamesInput.split('\n').map(name => name.trim()).filter(name => name !== '');
+            const payerLines = payerNamesInput.split('\n').map(line => line.trim()).filter(line => line !== '');
             
             let quantity = parseInt(document.getElementById('quantity').value, 10);
-            const usePayerNames = payerNames.length > 0;
-            if (usePayerNames) {
-                quantity = payerNames.length;
+            const hasPayers = payerLines.length > 0;
+            if (hasPayers) {
+                quantity = payerLines.length;
             }
 
             const allReceipts = []; 
@@ -370,10 +385,11 @@
                     return String(parseInt(match, 10) + i).padStart(match.length, '0');
                 });
                 
-                const currentPayerName = usePayerNames ? payerNames[i] : '';
+                // 處理姓名顯示
+                const payerInfoHtml = hasPayers ? formatPayerInfo(payerLines[i]) : '';
 
-                allReceipts.push(createReceiptHTML(currentSerial, '存根聯', date, content, formattedAmount, receiptHeader, amount, includeDirector, currentPayerName)); 
-                allReceipts.push(createReceiptHTML(currentSerial, '收執聯', date, content, formattedAmount, receiptHeader, amount, includeDirector, currentPayerName));
+                allReceipts.push(createReceiptHTML(currentSerial, '存根聯', date, content, formattedAmount, receiptHeader, amount, includeDirector, payerInfoHtml)); 
+                allReceipts.push(createReceiptHTML(currentSerial, '收執聯', date, content, formattedAmount, receiptHeader, amount, includeDirector, payerInfoHtml));
             }
 
             const receiptsPerPage = 4; 
@@ -383,12 +399,10 @@
                 const currentPage = document.createElement('div');
                 currentPage.className = 'a4-page';
 
-                // Add the dashed line separator div directly
                 const dashedLine = document.createElement('div');
                 dashedLine.className = 'dashed-line-separator';
                 currentPage.appendChild(dashedLine);
 
-                // Add receipts to the current page
                 for (let j = 0; j < receiptsPerPage; j++) {
                     if (currentReceiptIndex + j < allReceipts.length) {
                         currentPage.innerHTML += allReceipts[currentReceiptIndex + j];
@@ -402,15 +416,15 @@
             printButton.style.display = 'inline-block';
         });
 
-        function createReceiptHTML(serial, copyType, date, content, formattedAmount, receiptHeader, amountValue, includeDirector, payerName) {
+        function createReceiptHTML(serial, copyType, date, content, formattedAmount, receiptHeader, amountValue, includeDirector, payerHtml) {
             const contentLines = content.split('\n');
             const formattedContent = contentLines.map(line => line.replace(/^ +/g, match => '&nbsp;'.repeat(match.length))).join('<br>');
             const isThreeLinesOrMore = contentLines.filter(line => line.trim() !== '').length >= 3;
 
             const dateDisplay = date ? `日期：${date}` : `日期：                 `;
             
-            // 處理姓名顯示
-            const payerDisplay = payerName ? `&nbsp;&nbsp;<span style="border-bottom: 1px solid black; padding: 0 10px; font-weight: bold;">${payerName}</span>&nbsp;&nbsp;君` : '';
+            // 姓名顯示：茲收到 [內容] 君
+            const payerDisplay = payerHtml ? `&nbsp;&nbsp;<span style="border-bottom: 1px solid black; padding: 0 5px; display: inline-block;">${payerHtml}</span>&nbsp;&nbsp;君` : '';
 
             let amountHtml;
             if (amountValue) {
@@ -420,7 +434,6 @@
             }
 
             let directorSignatures = '';
-            // 判斷是否顯示院長簽名欄位
             if (includeDirector) {
                 directorSignatures = `<span class="receipt-content-label" style="margin-right: 120px;">院長:</span>`;
             }
@@ -441,7 +454,7 @@
                             <span>NO: ${serial}</span>
                         </div>
                     </div>
-                          <br> <!-- 新增空白行 -->
+                    <br>
 
                     <div class="receipt-row" style="margin-top: 24px;">
                         <span class="receipt-content-label">茲收到${payerDisplay}</span>
